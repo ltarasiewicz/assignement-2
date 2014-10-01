@@ -8,10 +8,73 @@
  * Licence: GPL2
  */
 
+add_action('admin_init', 'add_real_estate_metaboxes');
+add_action('init', 'add_houses_taxonomy');
+add_action('init', 'add_real_estate_post_type');
+add_action('save_post', 'save_real_estate');
+add_action('post_edit_form_tag', 'add_enctype');
 
+function add_enctype() {
+    echo ' enctype="multipart/form-data"';
+}
 
 function add_real_estate_metaboxes() {
+    
     add_meta_box('real_estate_area', 'Metraż', 'show_real_estate_area', 'real_estate', 'normal', 'high');
+    
+    add_meta_box('real_estate_price', 'Cena', 'show_real_estate_price', 'real_estate', 'normal', 'high');
+    
+    add_meta_box('real_estate_address', 'Address', 'show_real_estate_address', 'real_estate', 'normal', 'high');
+    
+    add_meta_box('real_estate_picture', 'Zdjęcie', 'show_real_estate_picture', 'real_estate', 'normal', 'high');
+    
+    function show_real_estate_picture($real_estate) {
+        
+        $picture = esc_html(get_post_meta($real_estate->ID, 'real_estate_picture', true));
+        
+        ?>
+        <table>
+            <tr>             
+                <td id="photo">
+                    <script type="text/javascript">
+                    jQuery(document).ready(function($) {
+                        $('#photo').load('../wp-content/plugins/MyRealEstatePlugin/RetrievePhotos.php?id=<?php echo $real_estate->ID; ?>');
+                        
+                    }) //end ready
+                    </script>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="file" name="real_estate_picture[]" id="real_estate_picture" value="Dodaj zdjęcie" />
+                </td>
+            </tr>
+        </table>
+        <?php
+    }
+    
+    function show_real_estate_address($real_estate) {
+        $address = esc_html(get_post_meta($real_estate->ID, 'real_estate_address', true));
+        ?>
+        <table>
+            <tr>
+                <td><input type="text" size="80" name="real_estate_address" value="<?php echo $address; ?>" /></td>
+            </tr>
+        </table>
+        <?php
+    }
+    
+    function show_real_estate_price($real_estate) {
+        
+        $price = esc_html(get_post_meta($real_estate->ID, 'real_estate_price', true));
+        ?>
+        <table>
+            <tr>
+                <td><input type="text" size="80" name="real_estate_price" value="<?php echo $price; ?>" />m<sup>PLN</sup></td>
+            </tr>
+        </table>
+        <?php
+    }
     
     function show_real_estate_area($real_estate) {
 
@@ -25,8 +88,6 @@ function add_real_estate_metaboxes() {
         <?php
     }    
 }
-
-add_action('admin_init', 'add_real_estate_metaboxes');
 
 function add_houses_taxonomy() {
     
@@ -63,7 +124,7 @@ function add_houses_taxonomy() {
     register_taxonomy('houses', 'real_estate', $args);
 }
 
-add_action('init', 'add_houses_taxonomy');
+
 
 function add_real_estate_post_type() {
     register_post_type('real_estate', array(
@@ -90,4 +151,65 @@ function add_real_estate_post_type() {
     );          
 }
 
-add_action('init', 'add_real_estate_post_type');
+
+
+
+function save_real_estate($id) {  
+
+    if( isset($_POST) && ! empty($_POST) ) {
+        
+        $area = esc_html(get_post_meta($id, 'real_estate_area', true));
+        $price = esc_html(get_post_meta($id, 'real_estate_price', true));
+        $address = esc_html(get_post_meta($id, 'real_estate_address', true));
+
+        $new_area = sanitize_text_field($_POST['real_estate_area']) ? sanitize_text_field($_POST['real_estate_area']) : $area;
+        $new_price = sanitize_text_field($_POST['real_estate_price']);  
+        $new_address = sanitize_text_field($_POST['real_estate_address']);  
+
+        update_post_meta($id, 'real_estate_area', $new_area, $area);
+        update_post_meta($id, 'real_estate_price', $new_price, $price);
+        update_post_meta($id, 'real_estate_address', $new_address, $address);
+
+        $allowedExt = array('jpg', 'png', 'jpeg', 'gif');
+        $picture = $_FILES['real_estate_picture']['name'];
+        for($i=0; $i<count($_FILES['real_estate_picture']['name']); $i++) {
+
+            $temp = explode('.', $_FILES['real_estate_picture']['name'][$i]);
+            $extension = end($temp);
+
+            if($_FILES['real_estate_picture']['error'][$i] > 0) {
+                exit('There is an error with the picture upload. Error code: ' . $_FILES['file']['error'][$i] . '</br>');
+
+            } else {
+                if ((($_FILES["real_estate_picture"]["type"][$i] == "image/gif") || 
+                        ($_FILES["real_estate_picture"]["type"][$i] == "image/jpeg") || 
+                        ($_FILES["real_estate_picture"]["type"][$i] == "image/jpg") || 
+                        ($_FILES["real_estate_picture"]["type"][$i] == "image/pjpeg") || 
+                        ($_FILES["real_estate_picture"]["type"][$i] == "image/x-png") || 
+                        ($_FILES["real_estate_picture"]["type"][$i] == "image/png")) && 
+                        ($_FILES["real_estate_picture"]["size"][$i] < 40000000) && in_array($extension, $allowedExt)) {
+
+                    echo 'Upload: ' . $_FILES['real_estate_picture']['name'][$i] . '</br>';
+                    echo 'Type: ' . $_FILES['real_estate_picture']['type'][$i] . '</br>';
+                    echo 'Size: ' . $_FILES['real_estate_picture']['size'][$i] . '</br>';
+                    echo 'Temporary name: ' . $_FILES['real_estate_picture']['tmp_name'][$i] . '</br>';
+
+                    if(file_exists('../wp-content/plugins/MyRealEstatePlugin/uploads/' . $id . '/' . $_FILES['real_estate_picture']['name'][$i])) {
+                        echo $_FILES['real_estate_picture']['name'][$i] . ' already exists.';
+                    } else {
+                        if( ! file_exists('../wp-content/plugins/MyRealEstatePlugin/uploads/' . $id) ) {
+                            mkdir('../wp-content/plugins/MyRealEstatePlugin/uploads/' . $id, 0777, true);
+                        }
+                        $uniqueId = uniqid();
+                        $ext = end(explode('.', $_FILES['real_estate_picture']['name'][$i]));
+                        move_uploaded_file($_FILES['real_estate_picture']['tmp_name'][$i], '../wp-content/plugins/MyRealEstatePlugin/uploads/' . $id .'/' . $uniqueId . '.' . $ext);
+                        echo 'Picture saved in ' . '../wp-content/plugins/MyRealEstatePlugin/uploads/' . $id .'/' . $uniqueId . '.' . $ext;
+                        }             
+                } else {
+                    echo 'Invalid type of file';
+                }                      
+            }
+        }
+    }
+}
+
