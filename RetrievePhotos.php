@@ -1,5 +1,21 @@
-<?php
+<script>
+    function delete(name, id)
+    {
+        if(confirm('Czy napewno chcesz usunąć to zdjęcie?'))
+        {
+            jQuery.ajax({
+                type: 'POST',
+                url: '../wp-content/plugins/RealEstateSB/delete_photo.php',
+                data: {
+                    name: id,
+                    id: id                   
+                },
+            }); // end ajax
+        }
+    }
+</script>
 
+<?php
 if( isset($_GET['id']) ) {
     $id = $_GET['id'];
     
@@ -15,7 +31,10 @@ if( isset($_GET['id']) ) {
                 echo '<a href="../wp-content/plugins/MyRealEstatePlugin/uploads/'.$_GET["id"].'/'.$file.'" data-lightbox="'.$temp[0].'" >
                 <img src="../wp-content/plugins/MyRealEstatePlugin/uploads/'.$_GET["id"].'/'.$file.'">
                 </a><br>';
-                echo '</div>';               
+                ?>
+                    <a onClick="return delete_photo(<?php echo $file; ?>, <?php echo $_GET['id']; ?>)">Usuń zdjęcie</a>
+                </div>
+                <?php             
             }
             $i++;
         }        
