@@ -13,6 +13,73 @@ add_action('init', 'add_houses_taxonomy');
 add_action('init', 'add_real_estate_post_type');
 add_action('save_post', 'save_real_estate');
 add_action('post_edit_form_tag', 'add_enctype');
+add_action('single_template', 'real_estate_single_template');
+add_action('wp_enqueue_scripts', 'enqueue_uploader_scripts');
+
+register_taxonomy_for_object_type('houses', 'real_estate');
+
+add_shortcode('real_estate_form', 'show_real_estate_form');
+
+function enqueue_uploader_scripts() {  
+    wp_enqueue_style('uploadfile_min_css', plugins_url(null, __FILE__) . '/uploader/css/uploadfile.min.css');
+    wp_enqueue_script('uploader_script', plugins_url(null, __FILE__) . '/uploader/js/jquery.uploadfile.min.js', array('jQuery'));
+}
+
+
+function show_real_estate_form() {
+    $uid = 'temp_' . uniqid();
+    ?>
+
+    <script>
+        
+        jQuery(document).ready(function() {
+            jQuery('#fileuploader').uploadFile({
+                url:"YOUR_FILE_UPLOAD_URL",
+                fileName:"myfile"
+            }); //end uploadFile       
+        }); //end ready          
+    </script>
+    
+    <form id="ajax_form">
+        <table>
+            <tr>
+                <td> Tytuł:</td>
+                <td><input type="text" size="60" name="real_estate_title" /></td>              
+            </tr>       
+            <tr>
+                <td> Cena:</td>
+                <td><input type="text" size="60" name="real_estate_price" /></td>              
+            </tr>
+            <tr>
+                <td> Metraż:</td>
+                <td><input type="text" size="60" name="real_estate_area" /></td>              
+            </tr>
+            <tr>
+                <td> Adres:</td>
+                <td><input type="text" size="60" name="real_estate_address" /></td>              
+            </tr>
+            <tr>
+                <td> Opis:</td>
+                <td><textarea name="real_estate_description" form="ajax_form"></textarea></td>
+            </tr>
+            <tr>
+                <td> Zdjęcia:</td>
+                <td>
+                    <div id="fileuploader"></div>
+                </td>
+            </tr>  
+        </table>
+        <input id="res" class="button" type="submit" name="res" value="Wyślij"/>
+    </form>
+    <?php
+}
+
+function real_estate_single_template($single_template) {
+    if (get_post_type() == 'real_estate') {
+        $single_template = dirname(__FILE__) . '/single-real_estate.php';
+    }
+    return $single_template;
+}
 
 function add_enctype() {
     echo ' enctype="multipart/form-data"';
@@ -156,13 +223,13 @@ function add_real_estate_post_type() {
 
 function save_real_estate($id) {  
 
-    if( isset($_POST) && ! empty($_POST) ) {
+    if( count($_POST) && get_post_type($id) == 'real_estate' ) {
         
         $area = esc_html(get_post_meta($id, 'real_estate_area', true));
         $price = esc_html(get_post_meta($id, 'real_estate_price', true));
         $address = esc_html(get_post_meta($id, 'real_estate_address', true));
 
-        $new_area = sanitize_text_field($_POST['real_estate_area']) ? sanitize_text_field($_POST['real_estate_area']) : $area;
+        $new_area = sanitize_text_field($_POST['real_estate_area']);
         $new_price = sanitize_text_field($_POST['real_estate_price']);  
         $new_address = sanitize_text_field($_POST['real_estate_address']);  
 
@@ -172,13 +239,16 @@ function save_real_estate($id) {
 
         $allowedExt = array('jpg', 'png', 'jpeg', 'gif');
         $picture = $_FILES['real_estate_picture']['name'];
+
         for($i=0; $i<count($_FILES['real_estate_picture']['name']); $i++) {
 
             $temp = explode('.', $_FILES['real_estate_picture']['name'][$i]);
             $extension = end($temp);
-
-            if($_FILES['real_estate_picture']['error'][$i] > 0) {
-                exit('There is an error with the picture upload. Error code: ' . $_FILES['file']['error'][$i] . '</br>');
+            
+            //if the error code is anything but int 4 ('No file was uploaded') or 0 ('No error')          
+            if($_FILES['real_estate_picture']['error'][$i]  != 4 && $_FILES['real_estate_picture']['error'][$i]  != 0) {
+                var_dump($_FILES);
+                exit('There is an error with the picture upload. Error code: ' . $_FILES['real_estate_picture']['error'][$i] . '</br>');
 
             } else {
                 if ((($_FILES["real_estate_picture"]["type"][$i] == "image/gif") || 
