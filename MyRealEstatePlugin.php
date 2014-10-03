@@ -21,8 +21,8 @@ register_taxonomy_for_object_type('houses', 'real_estate');
 add_shortcode('real_estate_form', 'show_real_estate_form');
 
 function enqueue_uploader_scripts() {  
-    wp_enqueue_style('uploadfile_min_css', plugins_url(null, __FILE__) . '/uploader/css/uploadfile.min.css');
-    wp_enqueue_script('uploader_script', plugins_url(null, __FILE__) . '/uploader/js/jquery.uploadfile.min.js', array('jQuery'));
+    wp_enqueue_style('uploadfile_min_css', 'http://hayageek.github.io/jQuery-Upload-File/uploadfile.min.css');
+    wp_enqueue_script('uploader_script', 'http://hayageek.github.io/jQuery-Upload-File/jquery.uploadfile.min.js', array('jquery'));
 }
 
 
@@ -30,12 +30,10 @@ function show_real_estate_form() {
     $uid = 'temp_' . uniqid();
     ?>
 
-    <script>
-        
+    <script>    
         jQuery(document).ready(function() {
             jQuery('#fileuploader').uploadFile({
-                url:"YOUR_FILE_UPLOAD_URL",
-                fileName:"myfile"
+
             }); //end uploadFile       
         }); //end ready          
     </script>
@@ -43,7 +41,7 @@ function show_real_estate_form() {
     <form id="ajax_form">
         <table>
             <tr>
-                <td> Tytuł:</td>
+                <td> Tytuł:</td>               
                 <td><input type="text" size="60" name="real_estate_title" /></td>              
             </tr>       
             <tr>
@@ -65,7 +63,7 @@ function show_real_estate_form() {
             <tr>
                 <td> Zdjęcia:</td>
                 <td>
-                    <div id="fileuploader"></div>
+                    <div id="fileuploader">Upload</div>
                 </td>
             </tr>  
         </table>
@@ -237,8 +235,9 @@ function save_real_estate($id) {
         update_post_meta($id, 'real_estate_price', $new_price, $price);
         update_post_meta($id, 'real_estate_address', $new_address, $address);
 
-        $allowedExt = array('jpg', 'png', 'jpeg', 'gif');
+
         $picture = $_FILES['real_estate_picture']['name'];
+
 
         for($i=0; $i<count($_FILES['real_estate_picture']['name']); $i++) {
 
@@ -247,23 +246,18 @@ function save_real_estate($id) {
             
             //if the error code is anything but int 4 ('No file was uploaded') or 0 ('No error')          
             if($_FILES['real_estate_picture']['error'][$i]  != 4 && $_FILES['real_estate_picture']['error'][$i]  != 0) {
-                var_dump($_FILES);
                 exit('There is an error with the picture upload. Error code: ' . $_FILES['real_estate_picture']['error'][$i] . '</br>');
 
             } else {
+
                 if ((($_FILES["real_estate_picture"]["type"][$i] == "image/gif") || 
                         ($_FILES["real_estate_picture"]["type"][$i] == "image/jpeg") || 
                         ($_FILES["real_estate_picture"]["type"][$i] == "image/jpg") || 
                         ($_FILES["real_estate_picture"]["type"][$i] == "image/pjpeg") || 
                         ($_FILES["real_estate_picture"]["type"][$i] == "image/x-png") || 
                         ($_FILES["real_estate_picture"]["type"][$i] == "image/png")) && 
-                        ($_FILES["real_estate_picture"]["size"][$i] < 40000000) && in_array($extension, $allowedExt)) {
-
-                    echo 'Upload: ' . $_FILES['real_estate_picture']['name'][$i] . '</br>';
-                    echo 'Type: ' . $_FILES['real_estate_picture']['type'][$i] . '</br>';
-                    echo 'Size: ' . $_FILES['real_estate_picture']['size'][$i] . '</br>';
-                    echo 'Temporary name: ' . $_FILES['real_estate_picture']['tmp_name'][$i] . '</br>';
-
+                        ($_FILES["real_estate_picture"]["size"][$i] < 40000000)) {
+                        
                     if(file_exists('../wp-content/plugins/MyRealEstatePlugin/uploads/' . $id . '/' . $_FILES['real_estate_picture']['name'][$i])) {
                         echo $_FILES['real_estate_picture']['name'][$i] . ' already exists.';
                     } else {
@@ -273,10 +267,9 @@ function save_real_estate($id) {
                         $uniqueId = uniqid();
                         $ext = end(explode('.', $_FILES['real_estate_picture']['name'][$i]));
                         move_uploaded_file($_FILES['real_estate_picture']['tmp_name'][$i], '../wp-content/plugins/MyRealEstatePlugin/uploads/' . $id .'/' . $uniqueId . '.' . $ext);
-                        echo 'Picture saved in ' . '../wp-content/plugins/MyRealEstatePlugin/uploads/' . $id .'/' . $uniqueId . '.' . $ext;
                         }             
                 } else {
-                    echo 'Invalid type of file';
+                    
                 }                      
             }
         }
