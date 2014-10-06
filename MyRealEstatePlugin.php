@@ -22,7 +22,8 @@ add_shortcode('real_estate_form', 'show_real_estate_form');
 
 function enqueue_uploader_scripts() {  
     wp_enqueue_style('uploadfile_min_css', plugins_url(null, __FILE__) . '/uploader/css/uploadfile.min.css');
-    wp_enqueue_script('uploader_script', plugins_url(null, __FILE__) . '/uploader/js/jquery.uploadfile.min.js', array('jQuery'));
+    wp_enqueue_script('jQuery-local', 'http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js');
+    wp_enqueue_script('uploader_script', plugins_url(null, __FILE__) . '/uploader/js/jquery.uploadfile.min.js');
 }
 
 
@@ -65,12 +66,13 @@ function show_real_estate_form() {
             <tr>
                 <td> Zdjęcia:</td>
                 <td>
-                    <div id="fileuploader"></div>
+                    <div id="fileuploader">Upload</div>
                 </td>
             </tr>  
         </table>
         <input id="res" class="button" type="submit" name="res" value="Wyślij"/>
     </form>
+    
     <?php
 }
 
