@@ -45,10 +45,12 @@ if( isset($_GET['id']) ) {
                 ?>
                     <a onClick="return delete_photo('<?php echo $file; ?>', '<?php echo $_GET['id']; ?>', '<?php echo $temp[0]; ?>')">Usuń zdjęcie</a>
                 </div>
-                <?php             
+                <?php   
+                
             }
             $i++;
-        }        
-    }
+        }  
     closedir($folder);
+    }
+    
 }
