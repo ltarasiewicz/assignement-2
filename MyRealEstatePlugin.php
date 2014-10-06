@@ -15,20 +15,141 @@ add_action('save_post', 'save_real_estate');
 add_action('post_edit_form_tag', 'add_enctype');
 add_action('single_template', 'real_estate_single_template');
 add_action('wp_enqueue_scripts', 'enqueue_uploader_scripts');
+add_action('wp_enqueue_scripts', 'ajaxform_enqueue');
+
+add_action('wp_ajax_real_estate_form', 'ajaxform_check');
+add_action('wp_ajax_nopriv_real_estate_form', 'ajaxform_check');
+
+add_action('wp_ajax_real_estate_form_insert', 'ajaxform_insert');
+add_action('wp_ajax_nopriv_real_estate_form_insert', 'ajaxform_insert');
 
 register_taxonomy_for_object_type('houses', 'real_estate');
 
 add_shortcode('real_estate_form', 'show_real_estate_form');
 
+
+function ajaxform_insert() {
+    global $wpdb;
+    
+    $title = esc_textarea($_POST['real_estate_title']);
+    $price = intval($_POST['real_estate_price']);
+    $area = intval($_POST['real_estate_area']);
+    $address = esc_textarea($_POST['real_estate_address']);
+    $description = esc_textarea($_POST['real_estate_description']);
+    
+    $date = current_time('mysql');
+    
+    $data = array(
+        'post_author' => 2,
+        'post_date' => $date,
+        'post_content' =>   $description,
+        'post_title'    =>  $title,
+        'post_status'   =>  'draft',
+        'post_type' =>  'real_estate',
+        'post_name' =>  sanitize_title($title)        
+    );
+    
+    $postsTable = $wpdb->prefix . 'posts';
+    
+    $wpdb->insert($postsTable, $data);
+    
+    $newPostID = $wpdb->insert_id;
+    
+    $metaPrice = array(
+        'post_id'   =>  $newPostID,
+        'meta_key'  =>  'real_estate_price',
+        'meta_value'    =>  $price
+    );
+    
+    $metaArea = array(
+        'post_id'   =>  $newPostID,
+        'meta_key'  =>  'real_estate_area',
+        'meta_value'    =>  $area        
+    );
+    
+    $metaAddress = array(
+        'post_id'   =>  $newPostID,
+        'meta_key'  =>  'real_estate_address',
+        'meta_value'    =>  $address
+    );
+    
+    $metaTable = $wpdb->prefix . 'postmeta';
+    $wpdb->insert($metaTable, $metaPrice);
+    $wpdb->insert($metaTable, $metaArea);
+    $wpdb->insert($metaTable, $metaAddress);
+    
+    // Move uploaded pictures  to the plugin directory
+    
+    $uid = $_POST["real_estate_picture"];
+    $oldroute = "../wp-content/uploads/" . $uid . "/";
+    $newroute = "../wp-content/plugins/MyRealEstatePlugin/uploads/" . $newPostID . "/";
+    echo realpath(__DIR__ . "/" . $newroute);
+    echo realpath(__DIR__ . "/" . $oldroute);
+    if ( file_exists($oldroute) )
+    {
+        mkdir($newroute, 0777, true);
+        
+        $folder = opendir($oldroute);
+        while (false !== ($file = readdir($folder))) 
+        {
+            $files[] = $file;
+        }
+        foreach($files as $file)
+        {
+            rename($oldroute . $file, $newroute . $file);
+        }
+        rmdir($oldroute);
+    }    
+    
+    die();
+    
+}
+
+function ajaxform_check() {
+    
+    $error = '';
+    
+    if ($_POST['real_estate_title'] != esc_textarea($_POST['real_estate_title']) 
+            || $_POST['real_estate_title'] == '') {
+        $error[] = 'real_estate_title';       
+    }
+    if (filter_var( $_POST['real_estate_price'], FILTER_SANITIZE_NUMBER_INT) != $_POST['real_estate_price'] 
+            || $_POST['real_estate_title'] == '') {
+        $error[] = 'real_estate_price';       
+    }    
+    if (filter_var( $_POST['real_estate_area'], FILTER_SANITIZE_NUMBER_INT) != $_POST['real_estate_area'] 
+            || $_POST['real_estate_title'] == '') {
+        $error[] = 'real_estate_area';       
+    }    
+    if ( $_POST['real_estate_address'] != esc_textarea($_POST['real_estate_address']) 
+            || $_POST['real_estate_address'] == '') {
+        $error[] = 'real_estate_address';       
+    }    
+    if ( $_POST['real_estate_description'] != esc_textarea($_POST['real_estate_description']) 
+            || $_POST['real_estate_description'] == '') {
+        $error[] = 'real_estate_description';       
+    }     
+    echo json_encode($error);
+    
+    die();
+}
+
+
+function ajaxform_enqueue() {
+    wp_enqueue_script('jquery');
+    wp_enqueue_script('ajaxformjs', plugins_url('ajaxform.js', __FILE__), array('jquery'));
+    
+    $localize = array(
+        'ajaxurl'  =>   admin_url('admin-ajax.php')
+    );
+    
+    wp_localize_script('ajaxformjs', 'AjaxForm', $localize);
+}
+
 function enqueue_uploader_scripts() {  
-<<<<<<< HEAD
-    wp_enqueue_style('uploadfile_min_css', plugins_url(null, __FILE__) . '/uploader/css/uploadfile.min.css');
-    wp_enqueue_script('jQuery-local', 'http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js');
-    wp_enqueue_script('uploader_script', plugins_url(null, __FILE__) . '/uploader/js/jquery.uploadfile.min.js');
-=======
     wp_enqueue_style('uploadfile_min_css', 'http://hayageek.github.io/jQuery-Upload-File/uploadfile.min.css');
     wp_enqueue_script('uploader_script', 'http://hayageek.github.io/jQuery-Upload-File/jquery.uploadfile.min.js', array('jquery'));
->>>>>>> 123853fb53c0b7c2011bcc042eea6933b0be20e1
+
 }
 
 
@@ -38,7 +159,28 @@ function show_real_estate_form() {
 
     <script>    
         jQuery(document).ready(function() {
-            jQuery('#fileuploader').uploadFile({
+            uploadObject = jQuery('#fileuploader').uploadFile({
+                url: "wp-content/plugins/MyRealEstatePlugin/uploader/php/upload.php?id=<?php echo $uid; ?>",
+                multiple: true,
+                fileName: "myfile",
+                maxFileSoze: 1024*500,
+                allowedTypes: "*",
+                autoSubmit: false,
+                afterUploadAll: function()
+                {
+                    jQuery("input[name='action']").val('real_estate_form_insert');
+                    
+                    jQuery.post(
+                        AjaxForm.ajaxurl,
+                        jQuery('#ajax_form').serialize(),
+                        function(response)
+                        {
+                            
+                        },
+                        'json'
+                    );
+                    
+                }                
 
             }); //end uploadFile       
         }); //end ready          
@@ -48,30 +190,32 @@ function show_real_estate_form() {
         <table>
             <tr>
                 <td> Tytuł:</td>               
-                <td><input type="text" size="60" name="real_estate_title" /></td>              
+                <td><input type="text" size="60" name="real_estate_title" id="real_estate_title"/></td>              
             </tr>       
             <tr>
                 <td> Cena:</td>
-                <td><input type="text" size="60" name="real_estate_price" /></td>              
+                <td><input type="text" size="60" name="real_estate_price" id="real_estate_price"/></td>              
             </tr>
             <tr>
                 <td> Metraż:</td>
-                <td><input type="text" size="60" name="real_estate_area" /></td>              
+                <td><input type="text" size="60" name="real_estate_area" id="real_estate_area"/></td>              
             </tr>
             <tr>
                 <td> Adres:</td>
-                <td><input type="text" size="60" name="real_estate_address" /></td>              
+                <td><input type="text" size="60" name="real_estate_address" id="real_estate_address"/></td>              
             </tr>
             <tr>
                 <td> Opis:</td>
-                <td><textarea name="real_estate_description" form="ajax_form"></textarea></td>
+                <td><textarea name="real_estate_description" form="ajax_form" id="real_estate_description"></textarea></td>
             </tr>
             <tr>
                 <td> Zdjęcia:</td>
                 <td>
+                    <input name="real_estate_picture" id="real_estate_picture" type="hidden" value="<?php echo $uid; ?>" />
                     <div id="fileuploader">Upload</div>
                 </td>
             </tr>  
+            <input name="action" type="hidden" value="real_estate_form" />
         </table>
         <input id="res" class="button" type="submit" name="res" value="Wyślij"/>
     </form>
