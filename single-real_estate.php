@@ -53,9 +53,9 @@ get_header(); ?>
                                             </div><!-- .entry-summary -->
                                             <?php else : ?>
                                             <div class="entry-content">
-                                                <link rel="stylesheet" type="text/css" href="wp-content/plugins/RealEstateSB/style.css">
-                                                <link rel="stylesheet" type="text/css" href="wp-content/plugins/RealEstateSB/lightbox/css/lightbox.css">
-                                                <script language="javascript" type="text/javascript" src="wp-content/plugins/RealEstateSB/lightbox/js/lightbox.js"></script>
+                                                <link rel="stylesheet" type="text/css" href="wp-content/plugins/MyRealEstatePlugin/style.css">
+                                                <link rel="stylesheet" type="text/css" href="wp-content/plugins/MyRealEstatePlugin/lightbox/css/lightbox.css">
+                                                <script language="javascript" type="text/javascript" src="wp-content/plugins/MyRealEstatePlugin/lightbox/js/lightbox.js"></script>
 
                                                 <?php
                                                 //echo "<pre>"; var_dump($wpdb); echo '</pre>';

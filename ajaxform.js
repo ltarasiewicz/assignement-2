@@ -3,6 +3,8 @@ jQuery( document ).ready(function()
        
     jQuery( "#ajax_form" ).submit(function(event) 
     {        
+        jQuery("input[name='action']").val('real_estate_form');
+        
         jQuery.post( 
             AjaxForm.ajaxurl,
             jQuery("#ajax_form :input").serialize(), 
@@ -17,14 +19,20 @@ jQuery( document ).ready(function()
                 } 
                 else
                 {
-                    window.uploadObject.startUpload();
+                    window.uploadObject.startUpload();  
+                    alert('Nieruchomość została dodana');
                 }
             }, 
             "json"
         )
+        .done(function()
+        {
+            
+        }
+        )
         .fail(function() 
         {
-
+            
         });
         
         event.preventDefault();

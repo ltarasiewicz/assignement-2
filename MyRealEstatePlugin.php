@@ -27,7 +27,6 @@ register_taxonomy_for_object_type('houses', 'real_estate');
 
 add_shortcode('real_estate_form', 'show_real_estate_form');
 
-
 function ajaxform_insert() {
     global $wpdb;
     
@@ -36,7 +35,7 @@ function ajaxform_insert() {
     $area = intval($_POST['real_estate_area']);
     $address = esc_textarea($_POST['real_estate_address']);
     $description = esc_textarea($_POST['real_estate_description']);
-    
+    $type = intval($_POST['real_estate_type']);
     $date = current_time('mysql');
     
     $data = array(
@@ -73,10 +72,17 @@ function ajaxform_insert() {
         'meta_value'    =>  $address
     );
     
+    $taxonomy = array(
+        'object_id' =>  $newPostID,
+        'term_taxonomy_id'  =>  $type,
+    );
+    
     $metaTable = $wpdb->prefix . 'postmeta';
+    $taxonomyTable = $wpdb->prefix . 'term_relationships';
     $wpdb->insert($metaTable, $metaPrice);
     $wpdb->insert($metaTable, $metaArea);
     $wpdb->insert($metaTable, $metaAddress);
+    $wpdb->insert($taxonomyTable, $taxonomy);
     
     // Move uploaded pictures  to the plugin directory
     
@@ -121,14 +127,17 @@ function ajaxform_check() {
             || $_POST['real_estate_title'] == '') {
         $error[] = 'real_estate_area';       
     }    
-    if ( $_POST['real_estate_address'] != esc_textarea($_POST['real_estate_address']) 
+    if ($_POST['real_estate_address'] != esc_textarea($_POST['real_estate_address']) 
             || $_POST['real_estate_address'] == '') {
         $error[] = 'real_estate_address';       
     }    
-    if ( $_POST['real_estate_description'] != esc_textarea($_POST['real_estate_description']) 
+    if ($_POST['real_estate_description'] != esc_textarea($_POST['real_estate_description']) 
             || $_POST['real_estate_description'] == '') {
         $error[] = 'real_estate_description';       
-    }     
+    }
+    if ($_POST['real_estate_description'] == '') {
+        $error[] = 'real_estate_type';       
+    }    
     echo json_encode($error);
     
     die();
@@ -147,6 +156,7 @@ function ajaxform_enqueue() {
 }
 
 function enqueue_uploader_scripts() {  
+    wp_enqueue_script('jquery');
     wp_enqueue_style('uploadfile_min_css', 'http://hayageek.github.io/jQuery-Upload-File/uploadfile.min.css');
     wp_enqueue_script('uploader_script', 'http://hayageek.github.io/jQuery-Upload-File/jquery.uploadfile.min.js', array('jquery'));
 
@@ -184,9 +194,10 @@ function show_real_estate_form() {
 
             }); //end uploadFile       
         }); //end ready          
-    </script>
+    </script>    
     
     <form id="ajax_form">
+        <input name="action" type="hidden" value="real_estate_form" />      
         <table>
             <tr>
                 <td> Tytuł:</td>               
@@ -205,6 +216,20 @@ function show_real_estate_form() {
                 <td><input type="text" size="60" name="real_estate_address" id="real_estate_address"/></td>              
             </tr>
             <tr>
+                <td> Rodzaj:</td>
+                    <td>
+                        <select name="real_estate_type" form="ajax_form" type="text" id="real_estate_type">
+                            <option value="">Wybierz rodzaj nieruchomości</option>
+                            <?php
+                            $terms = get_terms('houses');
+                            foreach($terms as $term) {
+                                echo '<option value="' . $term->term_id . '">' . $term->name . '</option>';
+                            }                            
+                            ?>
+                        </select>
+                    </td>
+            </tr>            
+            <tr>
                 <td> Opis:</td>
                 <td><textarea name="real_estate_description" form="ajax_form" id="real_estate_description"></textarea></td>
             </tr>
@@ -214,8 +239,7 @@ function show_real_estate_form() {
                     <input name="real_estate_picture" id="real_estate_picture" type="hidden" value="<?php echo $uid; ?>" />
                     <div id="fileuploader">Upload</div>
                 </td>
-            </tr>  
-            <input name="action" type="hidden" value="real_estate_form" />
+            </tr>            
         </table>
         <input id="res" class="button" type="submit" name="res" value="Wyślij"/>
     </form>
@@ -313,8 +337,8 @@ function add_houses_taxonomy() {
         'search_items'  => __('Szukaj nieruchomości', 'text_domain'),
         'popular_items' =>  __('Popularne nieruchomości', 'text_domain'),
         'all_items' =>  __('Wszystkie nieruchomości', 'text_domain'),
-        'parent_item'   =>  __('Groupa', 'text_domain'),
-        'parent_item_colon' =>  __('Groupa', 'text_domain'),     
+        'parent_item'   =>  __('Grupa', 'text_domain'),
+        'parent_item_colon' =>  __('Grupa', 'text_domain'),     
         'edit_item' =>  __('Edytuj', 'text_domain'),
         'update_item'   =>  __('Zmień', 'text_domain'),
         'add_new_item'  =>  __('Dodaj nowy rodzaj', 'text_domain'),
