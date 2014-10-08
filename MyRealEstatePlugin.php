@@ -105,7 +105,12 @@ function ajaxform_insert() {
             rename($oldroute . $file, $newroute . $file);
         }
         rmdir($oldroute);
-    }    
+        
+        chmod($newroute, 0777);
+        chmod($newroute . $file, 0777);
+    }
+    
+
     
     die();
     
@@ -437,11 +442,16 @@ function save_real_estate($id) {
                         echo $_FILES['real_estate_picture']['name'][$i] . ' already exists.';
                     } else {
                         if( ! file_exists('../wp-content/plugins/MyRealEstatePlugin/uploads/' . $id) ) {
-                            mkdir('../wp-content/plugins/MyRealEstatePlugin/uploads/' . $id, 0777, true);
+                            mkdir('../wp-content/plugins/MyRealEstatePlugin/uploads/' . $id, 0777, true);                       
                         }
                         $uniqueId = uniqid();
                         $ext = end(explode('.', $_FILES['real_estate_picture']['name'][$i]));
-                        move_uploaded_file($_FILES['real_estate_picture']['tmp_name'][$i], '../wp-content/plugins/MyRealEstatePlugin/uploads/' . $id .'/' . $uniqueId . '.' . $ext);
+                        move_uploaded_file($_FILES['real_estate_picture']['tmp_name'][$i], '../wp-content/plugins/MyRealEstatePlugin/uploads/' . $id .'/' . $uniqueId . '.' . $ext);                       
+                        
+                        chmod('../wp-content/plugins/MyRealEstatePlugin/uploads/', 0777);
+                        chmod('../wp-content/plugins/MyRealEstatePlugin/uploads/' . $id, 0777);
+                        chmod('../wp-content/plugins/MyRealEstatePlugin/uploads/' . $id .'/' . $uniqueId . '.' . $ext, 0777);
+                        
                         }             
                 } else {
                     
