@@ -52,5 +52,4 @@ if( isset($_GET['id']) ) {
         }  
     closedir($folder);
     }
-    
 }
